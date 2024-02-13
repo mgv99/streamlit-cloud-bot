@@ -33,6 +33,60 @@ def create_bot():
     # Create the bot
     bot = Bot('greetings_bot')
     # Add here intents, states, bodies...
+    # Load bot properties stored in a dedicated file
+    bot.load_properties('config.ini')
+    # Define the platform your chatbot will use
+    websocket_platform = bot.use_websocket_platform(use_ui=False) # IMPORTANT: USE_UI = FALSE
+
+    # STATES
+
+    initial_state = bot.new_state('initial_state', initial=True)
+    hello_state = bot.new_state('hello_state')
+    good_state = bot.new_state('good_state')
+    bad_state = bot.new_state('bad_state')
+
+    # INTENTS
+
+    hello_intent = bot.new_intent('hello_intent', [
+        'hello',
+        'hi',
+    ])
+
+    good_intent = bot.new_intent('good_intent', [
+        'good',
+        'fine',
+    ])
+
+    bad_intent = bot.new_intent('bad_intent', [
+        'bad',
+        'awful',
+    ])
+
+    # STATES BODIES' DEFINITION + TRANSITIONS
+
+    initial_state.when_intent_matched_go_to(hello_intent, hello_state)
+
+    def hello_body(session: Session):
+        websocket_platform.reply(session, 'Hi! How are you?')
+        websocket_platform.reply_options(session, ['Good', 'Bad'])
+
+    hello_state.set_body(hello_body)
+    hello_state.when_intent_matched_go_to(good_intent, good_state)
+    hello_state.when_intent_matched_go_to(bad_intent, bad_state)
+
+    def good_body(session: Session):
+        session.reply('I am glad to hear that!')
+
+    good_state.set_body(good_body)
+    good_state.go_to(initial_state)
+
+    def bad_body(session: Session):
+        session.reply('I am sorry to hear that...')
+
+    bad_state.set_body(bad_body)
+    bad_state.go_to(initial_state)
+
+    print('running the bot')
     bot.run(sleep=False)  # IMPORTANT: SLEEP = FALSE
     # Always return true
     return True
